@@ -5,7 +5,9 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Map as M
 
-data CValue = CVar Text deriving Show
+data CValue = CVar Text
+            | CInt Int
+            | CSub Context deriving Show
 
 newtype Context = Context
     { unContext :: M.Map Text CValue }

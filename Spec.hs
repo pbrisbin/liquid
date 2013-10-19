@@ -20,13 +20,14 @@ main = hspec $ do
                                  , TString " string"
                                  ]
 
-        it "parses variable interpolations at the front" $ do
-            parseTemplate "{{var}} string"
-                `shouldBe` Right [TVar "var", TString " string"]
+        it "parses a for loop" $ do
+            parseTemplate "{% for post in posts %}\nTitle: {{post.title}}\n{% endfor %}"
+                    `shouldBe` Right [ TFor "post" "posts"
+                                        [ TString "Title: "
+                                        , TVar "post.title"
+                                        ]
+                                     ]
 
-        it "parses variable interpolations at the end" $ do
-            parseTemplate "String {{var}}"
-                `shouldBe` Right [TString "String ", TVar "var"]
 
     describe "renderPartWith" $ do
         it "renders simple strings" $ do
@@ -37,11 +38,15 @@ main = hspec $ do
             renderPartWith (fromList [("name", CVar "Pat")]) (TVar "name")
                 `shouldBe` Right "Pat"
 
-        it "handles invalid variables" $ do
-            renderPartWith (fromList [("foo", CVar ""), ("bar", CVar "")]) (TVar "baz")
-                `shouldBe` (Left $ "Unknown value in context"
-                                 ++ "\n  missing value:   baz"
-                                 ++ "\n  current context: [\"bar\",\"foo\"]")
+        it "renders nested variables" $ do
+            let sub = fromList [("name", CVar "Pat"), ("age", CInt 28)]
+            let ctx = fromList [("user", CSub sub)]
+
+            renderPartWith ctx (TVar "user.name")
+                `shouldBe` Right "Pat"
+
+            renderPartWith ctx (TVar "user.age")
+                `shouldBe` Right "28"
 
     describe "liquid" $ do
         it "can interpolate simple variables" $ do
