@@ -20,7 +20,7 @@ renderPartWith ctx (TVar txt) =
 
 renderPartWith ctx (TFor elem list template) =
     case lookupValue list ctx of
-        Just (Array vector) -> renderEach ctx elem vector template
+        Just (Array vector) -> renderVector ctx elem vector template
         _ -> Left $ "Array not found in context: " ++ T.unpack elem
 
 renderPartWith ctx (TIf pred cons malt) =
@@ -29,8 +29,12 @@ renderPartWith ctx (TIf pred cons malt) =
         (False, Just alt) -> renderWith ctx alt
         _                 -> return ""
 
-renderEach :: Value -> Text -> Vector Value -> Template -> Either String Text
-renderEach outer key list template =
+renderVector :: Value        -- ^ The outer context
+             -> Text         -- ^ The name to use for each element
+             -> Vector Value -- ^ The vector of elements
+             -> Template     -- ^ The template to render
+             -> Either String Text
+renderVector outer key list template =
     fmap (T.concat . V.toList) $ V.forM list $ \value ->
         let sub = outer `combineValues` object [key .= value]
         in renderWith sub template
