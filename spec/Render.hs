@@ -33,6 +33,15 @@ instance ToJSON User where
                                  ]]
 -- }}}
 
+-- HELPERS {{{
+(ctx, ast) `shouldRender` txt = renderWith ctx ast `shouldBe` Right txt
+
+assertNoRender ctx ast =
+    case renderWith ctx ast of
+        Left _  -> True
+        _       -> False
+-- }}}
+
 main :: IO ()
 main = hspec $ do
     describe "Simple text" $ do
@@ -85,16 +94,13 @@ main = hspec $ do
                 (object ["var" .= False], [TIf (TTruthy "var") [] (Just [TString "content"])])
                     `shouldRender` "content"
 
-            it "renders when a predicate is true" $ do
-                pending
+            context "Operators" $ do
+                let apple = "apple" :: Text
 
-            it "does not render when a predicate is false" $ do
-                pending
+                it "renders when an equality predicate is true" $ do
+                    (object ["var" .= apple], [TIf (TEquals "var" "apple") [TString "content"] Nothing])
+                        `shouldRender` "content"
 
-    where
-        (ctx, ast) `shouldRender` txt = renderWith ctx ast `shouldBe` Right txt
-
-        assertNoRender ctx ast =
-            case renderWith ctx ast of
-                Left _  -> True
-                _       -> False
+                it "does not render when an equality predicate is false" $ do
+                    (object ["var" .= apple], [TIf (TEquals "var" "orange") [TString "content"] Nothing])
+                        `shouldRender` ""

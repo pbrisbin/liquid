@@ -4,6 +4,15 @@ import Test.Hspec
 import Text.Liquid.Context
 import Text.Liquid.Parse
 
+-- HELPERS {{{
+str `shouldParseTo` ast = parseTemplate str `shouldBe` Right ast
+
+assertNoParse str =
+    case parseTemplate str of
+            Left _ -> True
+            _      -> False
+-- }}}
+
 main :: IO ()
 main = hspec $ do
     describe "Simple text" $ do
@@ -56,11 +65,3 @@ main = hspec $ do
                         `shouldParseTo` [ TIf (TEquals "foo.bar" "baz, bat")
                                             [ TString "content" ] Nothing
                                         ]
-
-    where
-        str `shouldParseTo` ast = parseTemplate str `shouldBe` Right ast
-
-        assertNoParse str =
-            case parseTemplate str of
-                    Left _ -> True
-                    _      -> False
