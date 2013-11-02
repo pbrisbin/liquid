@@ -121,8 +121,7 @@ text = fmap (TString . T.pack) $ manyTill anyToken eot
 
 variable :: Parser String
 variable = many $   letter
-                <|> char '_'
-                <|> char '.'
+                <|> oneOf "_."
 
 openTag :: String -> Parser ()
 openTag tg = do
