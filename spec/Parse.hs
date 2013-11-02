@@ -65,3 +65,9 @@ main = hspec $ do
                         `shouldParseTo` [ TIf (TEquals "foo.bar" "baz, bat")
                                             [ TString "content" ] Nothing
                                         ]
+
+                it "parses equality between an object and a number" $ do
+                    "{% if foo.bar == 42 %}content{% endif %}"
+                        `shouldParseTo` [ TIf (TEquals "foo.bar" "42")
+                                            [ TString "content" ] Nothing
+                                        ]

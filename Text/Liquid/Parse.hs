@@ -79,9 +79,9 @@ predicate =  try binaryPredicate
 
 binaryPredicate :: Parser TPredicate
 binaryPredicate = do
-    lhs <- try quotedString <|> variable
+    lhs <- variable
     op  <- operator
-    rhs <- try quotedString <|> variable
+    rhs <- try quotedString <|> try bareNumber <|> variable
 
     return $
         case op of
@@ -98,6 +98,8 @@ binaryPredicate = do
             str <- manyTill anyChar $ char c
 
             return str
+
+        bareNumber = many1 digit
 
         operator =   stripped
                  $   try (string "==")
