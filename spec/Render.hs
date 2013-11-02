@@ -26,3 +26,17 @@ main = hspec $ do
 
             renderPartWith ctx (TVar "user.age")
                 `shouldBe` Right "28"
+
+        it "renders a for loop" $ do
+            let posts = [ CSub $ fromList [("title", CVar "Post one")]
+                        , CSub $ fromList [("title", CVar "Post two")]
+                        ]
+
+            let ctx = fromList [("posts", CArray posts)]
+
+            renderPartWith ctx (TFor "post" "posts"
+                                    [ TString "\nTitle: "
+                                    , TVar "post.title"
+                                    , TString "\n"
+                                    ])
+                `shouldBe` Right "\nTitle: Post one\n\nTitle: Post two\n"

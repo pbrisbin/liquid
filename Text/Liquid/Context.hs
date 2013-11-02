@@ -7,6 +7,7 @@ import qualified Data.Map as M
 
 data CValue = CVar Text
             | CInt Int
+            | CArray [CValue]
             | CSub Context deriving Show
 
 newtype Context = Context
