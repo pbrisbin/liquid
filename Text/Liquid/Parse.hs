@@ -52,9 +52,11 @@ forLoop :: Parser TPart
 forLoop = do
     openTag "for"
     elem <- variable
-    stripped $ string "in"
+    many1 space
+    string "in"
+    many1 space
     list <- variable
-    many space
+    spaces
     string "%}"
 
     inner <- manyTill tpart (try $ endTag "for")
@@ -65,7 +67,7 @@ ifStatement :: Parser TPart
 ifStatement = do
     openTag "if"
     pred <- predicate
-    many space
+    spaces
     string "%}"
 
     cons <- manyTill tpart (try $ endTag "if")
@@ -97,14 +99,14 @@ binaryPredicate = do
         bareNumber = many1 digit
 
         operator = do
-            many space
+            spaces
             op <-   try (string "==" >> return TEquals)
                 <|> try (string "!=" >> return TNotEquals)
                 <|> try (string ">=" >> return TGreaterEquals)
                 <|> try (string "<=" >> return TLessEquals)
                 <|> try (string ">"  >> return TGreater)
                 <|>     (string "<"  >> return TLess)
-            many space
+            spaces
 
             return op
 
@@ -126,7 +128,9 @@ variable = many $   letter
 openTag :: String -> Parser ()
 openTag tg = do
     string "{%"
-    stripped (string tg)
+    spaces
+    string tg
+    many1 space
 
     return ()
 
@@ -138,4 +142,4 @@ endTag tg = do
     return ()
 
 stripped :: Stream s m Char => ParsecT s u m b -> ParsecT s u m b
-stripped = between (many space) (many space)
+stripped = between spaces spaces
