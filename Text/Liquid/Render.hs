@@ -1,47 +1,38 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Text.Liquid.Render where
+module Text.Liquid.Render (renderWith) where
 
-import Data.Text (Text)
-import Data.Monoid
 import Text.Liquid.Context
 import Text.Liquid.Parse
 
 import qualified Data.Text as T
-import qualified Data.Map as M
+import qualified Data.Vector as V
 
-renderWith :: Context -> Template -> Either String Text
-renderWith ctx = concatMap' (renderPartWith ctx)
+renderWith :: Value -> Template -> Either String Text
+renderWith ctx = fmap T.concat . mapM (renderPartWith ctx)
 
-renderPartWith :: Context -> TPart -> Either String Text
-renderPartWith ctx (TString txt) = Right txt
+renderPartWith :: Value -> TPart -> Either String Text
+renderPartWith _   (TString txt) = Right txt
+
 renderPartWith ctx (TVar txt) =
-    let (p, ps) = T.breakOn "." txt
-    in case M.lookup p (unContext ctx) of
-        Nothing -> Left $ "Unknown value in context"
-                        ++ "\n  missing value:   " ++ (T.unpack txt)
-                        ++ "\n  current context: " ++ (show ctx)
-
-        Just (CVar v) -> Right v
-        Just (CInt i) -> Right (T.pack $ show i)
-
-        Just (CSub ctx') -> renderPartWith ctx' (TVar $ T.drop 1 ps)
+    case lookupValue txt ctx of
+        Just v  -> Right (renderValue v)
+        Nothing -> Left $ "Value not found in context: " ++ T.unpack txt
 
 renderPartWith ctx (TFor elem list template) =
-    case M.lookup list (unContext ctx) of
-        Just (CArray list') -> renderEach elem list' template
+    case lookupValue list ctx of
+        Just (Array vector) -> renderEach ctx elem vector template
+        _ -> Left $ "Array not found in context: " ++ T.unpack elem
 
-        _ -> Left $ "Unknown list in context"
-                  ++ "\n  missing value:   " ++ (T.unpack list)
-                  ++ "\n  current context: " ++ (show ctx)
+renderEach :: Value -> Text -> Vector Value -> Template -> Either String Text
+renderEach outer key list template =
+    fmap (T.concat . V.toList) $ V.forM list $ \value ->
+        let sub = outer `combineValues` object [key .= value]
+        in renderWith sub template
 
-    where
-        renderEach :: Text -> [CValue] -> Template -> Either String Text
-        renderEach key list template =
-            concatMap' (renderItem key template) list
-
-        renderItem :: Text -> Template -> CValue -> Either String Text
-        renderItem key template value =
-            renderWith (fromList [(key, value)]) template
-
-concatMap' :: (Monad m, Functor m, Monoid b) => (a -> m b) -> [a] -> m b
-concatMap' f xs = fmap mconcat $ mapM f xs
+renderValue :: Value -> Text
+renderValue (String t)   = t
+renderValue (Number n)   = T.pack $ show n
+renderValue (Bool True)  = "true"
+renderValue (Bool False) = "false"
+renderValue Null         = ""
+renderValue _            = "<json value>"

@@ -6,37 +6,64 @@ import Text.Liquid.Parse
 import Text.Liquid.Render
 import Text.Liquid
 
+data Post = Post { postTitle :: Text }
+
+instance ToJSON Post where
+    toJSON (Post title) = object ["title" .= title]
+
+data User = User
+    { userName  :: Text
+    , userAge   :: Int
+    , userPosts :: [Post]
+    }
+
+instance ToJSON User where
+    toJSON (User name age posts) =
+        object ["user" .= object [ "name"  .= name
+                                 , "age"   .= age
+                                 , "posts" .= map toJSON posts
+                                 ]]
+
 main :: IO ()
 main = hspec $ do
-    describe "renderPartWith" $ do
+    describe "renderWith" $ do
         it "renders simple strings" $ do
-            renderPartWith undefined (TString "hello world")
+            renderWith undefined [(TString "hello world")]
                 `shouldBe` Right "hello world"
 
         it "renders variable interpolation" $ do
-            renderPartWith (fromList [("name", CVar "Pat")]) (TVar "name")
-                `shouldBe` Right "Pat"
+            let variableValue = "Foo" :: Text
+
+            renderWith (object ["name" .= variableValue]) [(TVar "name")]
+                `shouldBe` Right variableValue
 
         it "renders nested variables" $ do
-            let sub = fromList [("name", CVar "Pat"), ("age", CInt 28)]
-            let ctx = fromList [("user", CSub sub)]
+            let pat = User
+                    { userName  = "Pat"
+                    , userAge   = 28
+                    , userPosts = []
+                    }
 
-            renderPartWith ctx (TVar "user.name")
+            renderWith (toJSON pat) [(TVar "user.name")]
                 `shouldBe` Right "Pat"
 
-            renderPartWith ctx (TVar "user.age")
+            renderWith (toJSON pat) [(TVar "user.age")]
                 `shouldBe` Right "28"
 
         it "renders a for loop" $ do
-            let posts = [ CSub $ fromList [("title", CVar "Post one")]
-                        , CSub $ fromList [("title", CVar "Post two")]
-                        ]
+            let pat = User
+                    { userName  = "Pat"
+                    , userAge   = 0
+                    , userPosts = [ Post "Post one"
+                                  , Post "Post two"
+                                  ]
+                    }
 
-            let ctx = fromList [("posts", CArray posts)]
-
-            renderPartWith ctx (TFor "post" "posts"
-                                    [ TString "\nTitle: "
-                                    , TVar "post.title"
-                                    , TString "\n"
-                                    ])
-                `shouldBe` Right "\nTitle: Post one\n\nTitle: Post two\n"
+            renderWith (toJSON pat) [(TFor "post" "user.posts"
+                                            [ TString "\nTitle: "
+                                            , TVar "post.title"
+                                            , TString " by "
+                                            , TVar "user.name"
+                                            , TString "\n"
+                                            ])]
+                `shouldBe` Right "\nTitle: Post one by Pat\n\nTitle: Post two by Pat\n"

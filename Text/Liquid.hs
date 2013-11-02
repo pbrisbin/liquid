@@ -1,11 +1,9 @@
-module Text.Liquid where
+module Text.Liquid (liquid) where
 
-import Control.Monad
-import Control.Monad.Instances
-import Data.Text (Text)
+import Control.Monad ((<=<))
 import Text.Liquid.Context
 import Text.Liquid.Parse
 import Text.Liquid.Render
 
-liquid :: [(Text, CValue)] -> Text -> Either String Text
-liquid ctx = renderWith (fromList ctx) <=< parseTemplate
+liquid :: ToJSON a => a -> Text -> Either String Text
+liquid ctx = renderWith (toJSON ctx) <=< parseTemplate

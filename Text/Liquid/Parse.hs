@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
-module Text.Liquid.Parse where
+module Text.Liquid.Parse
+    ( Template
+    , TPart(..)
+    , parseTemplate
+    ) where
 
 import Control.Arrow
 import Data.Text (Text)
@@ -78,7 +82,7 @@ endFor = do
     return ()
 
 -- | Result of this parser should always be discarded. It returns an
---   empty TPart so it can be used a section delimiter in text.
+--   empty TPart so it can be used as a section delimiter in text.
 ender :: Parser TPart
 ender = do
     endFor -- <|> endWhatever
