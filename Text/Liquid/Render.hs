@@ -50,6 +50,11 @@ isTrue ctx (TTruthy key) =
         Just v  -> isValueTruthy v
         Nothing -> False
 
+isTrue ctx (TEquals lhs rhs) =
+    case lookupValue lhs ctx of
+        Just v  -> isValueEqual v rhs
+        Nothing -> False
+
 isValueTruthy :: Value -> Bool
 isValueTruthy (Object _) = True
 isValueTruthy (Array v)  = not $ V.null v
@@ -57,3 +62,11 @@ isValueTruthy (String t) = t /= ""
 isValueTruthy (Number n) = n /= 0
 isValueTruthy (Bool b)   = b
 isValueTruthy Null       = False
+
+isValueEqual :: Value -> Text -> Bool
+isValueEqual (String t)   rhs     = t == rhs
+isValueEqual (Number n)   rhs     = (T.pack $ show n) == rhs
+isValueEqual (Bool True)  "true"  = True
+isValueEqual (Bool False) "false" = True
+isValueEqual Null         "null"  = True
+isValueEqual _            _       = False
