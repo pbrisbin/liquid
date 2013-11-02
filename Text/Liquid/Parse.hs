@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts  #-}
-module Text.Liquid.Parse where
-    -- ( Template
-    -- , TPart(..)
-    -- , TPredicate(..)
-    -- , parseTemplate
-    -- ) where
+module Text.Liquid.Parse
+    ( Template
+    , TPart(..)
+    , TPredicate(..)
+    , parseTemplate
+    ) where
 
 import Control.Arrow
 import Data.Text (Text)
