@@ -19,52 +19,71 @@ parseTemplate :: Text -> Either String Template
 parseTemplate = left show . parse template ""
 
 template :: Parser Template
-template = templateTill eof'
+template = manyTill tpart eof'
 
-templateTill p = manyTill (interpolation <|> text) p
+tpart :: Parser TPart
+tpart = try special <|> text
 
--- special :: Parser TPart
--- special = try interpolation <|> try forLoop
+special :: Parser TPart
+special = try interpolation <|> forLoop
 
-interpolation = output (many $ letter <|> underscore <|> dot)
+interpolation :: Parser TPart
+interpolation = do
+    str <- between (string "{{")
+                   (string "}}")
+                   (stripped variable)
 
-output p = between
-    (string "{{")
-    (string "}}")
-    (stripped p)
+    return $ TVar (T.pack str)
 
-tag p inner = do
-    string "{%"
-    (t,rest) <- p
+    where
+
+forLoop :: Parser TPart
+forLoop = do
+    openFor
+    many space
+    elem <- variable
+    stripped $ string "in"
+    list <- variable
+    many space
     string "%}"
-    inner <- inner
-    string "{%"
-    stripped $ string "end" ++ t
-    string "%}"
 
-    return t rest inner
+    inner <- manyTill tpart (try endFor)
 
-identifier :: Parser String
-identifier = many $ letter <|> underscore
+    return $ TFor (T.pack elem) (T.pack list) inner
 
-variable :: Parser String
-variable = many $ letter <|> underscore <|> dot
-
-underscore :: Parser Char
-underscore = char '_'
-
-dot :: Parser Char
-dot = char '.'
+    where
+        openFor = do
+            string "{%"
+            many space
+            string "for"
 
 text :: Parser TPart
 text = do
-    value <- manyTill anyToken
-           $ ended <|> eof'
+    value <- manyTill anyToken $ ended
 
     return $ TString (T.pack value)
 
     where
-        ended = lookAhead (output anyToken) <|> (tag anyToken anyToken)
+        ended = lookAhead $ try special <|> try ender <|> eof'
+
+variable :: Parser String
+variable = many $ letter <|> char '_' <|> char '.'
+
+endFor :: Parser ()
+endFor = do
+    between (string "{%")
+            (string "%}")
+            (stripped $ string "endfor")
+
+    return ()
+
+-- | Result of this parser should always be discarded. It returns an
+--   empty TPart so it can be used a section delimiter in text.
+ender :: Parser TPart
+ender = do
+    endFor -- <|> endWhatever
+
+    return $ TString ""
 
 stripped :: Stream s m Char => ParsecT s u m b -> ParsecT s u m b
 stripped = between (many space) (many space)
