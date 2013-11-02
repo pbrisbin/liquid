@@ -24,11 +24,10 @@ renderPartWith ctx (TFor elem list template) =
         _ -> Left $ "Array not found in context: " ++ T.unpack elem
 
 renderPartWith ctx (TIf pred cons malt) =
-    if isTrue ctx pred
-        then renderWith ctx cons
-        else case malt of
-                Just alt -> renderWith ctx alt
-                Nothing  -> return ""
+    case (isTrue ctx pred, malt) of
+        (True,  _       ) -> renderWith ctx cons
+        (False, Just alt) -> renderWith ctx alt
+        _                 -> return ""
 
 renderEach :: Value -> Text -> Vector Value -> Template -> Either String Text
 renderEach outer key list template =
