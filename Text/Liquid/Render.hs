@@ -23,6 +23,13 @@ renderPartWith ctx (TFor elem list template) =
         Just (Array vector) -> renderEach ctx elem vector template
         _ -> Left $ "Array not found in context: " ++ T.unpack elem
 
+renderPartWith ctx (TIf pred cons malt) =
+    if isTrue ctx pred
+        then renderWith ctx cons
+        else case malt of
+                Just alt -> renderWith ctx alt
+                Nothing  -> return ""
+
 renderEach :: Value -> Text -> Vector Value -> Template -> Either String Text
 renderEach outer key list template =
     fmap (T.concat . V.toList) $ V.forM list $ \value ->
@@ -36,3 +43,17 @@ renderValue (Bool True)  = "true"
 renderValue (Bool False) = "false"
 renderValue Null         = ""
 renderValue _            = "<json value>"
+
+isTrue :: Value -> TPredicate -> Bool
+isTrue ctx (TTruthy key) =
+    case lookupValue key ctx of
+        Just v  -> isValueTruthy v
+        Nothing -> False
+
+isValueTruthy :: Value -> Bool
+isValueTruthy (Object _) = True
+isValueTruthy (Array v)  = not $ V.null v
+isValueTruthy (String t) = t /= ""
+isValueTruthy (Number n) = n /= 0
+isValueTruthy (Bool b)   = b
+isValueTruthy Null       = False

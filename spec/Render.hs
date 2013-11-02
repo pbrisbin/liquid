@@ -74,10 +74,16 @@ main = hspec $ do
 
         context "if statements" $ do
             it "renders when a truthy conditions is true" $ do
-                pending
+                (object ["var" .= True], [TIf (TTruthy "var") [TString "content"] Nothing])
+                    `shouldRender` "content"
 
-            it "does not render when a truthy condition is false" $ do
-                pending
+            it "renders nothing if truthy condition is false with no alternative" $ do
+                (object ["var" .= False], [TIf (TTruthy "var") [TString "content"] Nothing])
+                    `shouldRender` ""
+
+            it "renders the alternative truthy condition is false" $ do
+                (object ["var" .= False], [TIf (TTruthy "var") [] (Just [TString "content"])])
+                    `shouldRender` "content"
 
             it "renders when a predicate is true" $ do
                 pending
