@@ -22,6 +22,9 @@ lookupValue key (Object hm) = do
     case (HM.lookup key' hm, rest) of
         (v, "") -> v
         ((Just o@(Object _)), _ ) -> lookupValue (T.drop 1 rest) o
+        _ -> Nothing
+
+lookupValue _ _ = Nothing
 
 -- | When both arguments are Objects, return a new Object with the keys
 --   and values from both, otherwise return the first argument as is.
