@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+for spec in "$(dirname "$0")"/*.hs; do
+  runhaskell "$spec"
+done
