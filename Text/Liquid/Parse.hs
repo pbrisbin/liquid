@@ -79,18 +79,13 @@ predicate =  try binaryPredicate
 
 binaryPredicate :: Parser TPredicate
 binaryPredicate = do
-    lhs <- variable
-    op  <- operator
-    rhs <- try quotedString <|> try bareNumber <|> variable
+    lhs  <- variable
+    mkOp <- operator
+    rhs  <-   try quotedString
+          <|> try bareNumber
+          <|> variable
 
-    return $
-        case op of
-            "==" -> TEquals (T.pack lhs) (T.pack rhs)
-            "!=" -> TNotEquals (T.pack lhs) (T.pack rhs)
-            ">=" -> TGreaterEquals (T.pack lhs) (T.pack rhs)
-            "<=" -> TLessEquals (T.pack lhs) (T.pack rhs)
-            ">"  -> TGreater (T.pack lhs) (T.pack rhs)
-            "<"  -> TLess (T.pack lhs) (T.pack rhs)
+    return $ mkOp (T.pack lhs) (T.pack rhs)
 
     where
         quotedString = do
@@ -101,13 +96,17 @@ binaryPredicate = do
 
         bareNumber = many1 digit
 
-        operator =   stripped
-                 $   try (string "==")
-                 <|> try (string "!=")
-                 <|> try (string ">=")
-                 <|> try (string "<=")
-                 <|> try (string ">")
-                 <|> string "<"
+        operator = do
+            many space
+            op <-   try (string "==" >> return TEquals)
+                <|> try (string "!=" >> return TNotEquals)
+                <|> try (string ">=" >> return TGreaterEquals)
+                <|> try (string "<=" >> return TLessEquals)
+                <|> try (string ">"  >> return TGreater)
+                <|>     (string "<"  >> return TLess)
+            many space
+
+            return op
 
 truthyPredicate :: Parser TPredicate
 truthyPredicate = fmap (TTruthy . T.pack) variable
