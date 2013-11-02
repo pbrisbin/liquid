@@ -6,41 +6,61 @@ import Text.Liquid.Parse
 
 main :: IO ()
 main = hspec $ do
-    describe "parseTemplate" $ do
-        it "parses variable interpolations" $ do
-            "Foo {{var}} bar" `shouldParseTo` [ TString "Foo "
-                                              , TVar "var"
-                                              , TString " bar"
+    describe "Simple text" $ do
+        it "parses exactly as-is" $ do
+            let content = "Some{thing with \t 99% funny characters\n\n"
+
+            content `shouldParseTo` [TString content]
+
+    describe "Output tags" $ do
+        it "parses to a variable by the given name" $ do
+            "foo {{bar}} baz" `shouldParseTo` [ TString "foo "
+                                              , TVar "bar"
+                                              , TString " baz"
                                               ]
 
-        it "parses a for loop" $ do
-            "{% for post in posts %}\nTitle: {{post.title}}\n{% endfor %}"
-                `shouldParseTo` [ TFor "post" "posts"
-                                    [ TString "\nTitle: "
-                                    , TVar "post.title"
-                                    , TString "\n"
+        it "can contain underscores and dots" $ do
+            "{{user.phone_number}}" `shouldParseTo` [TVar "user.phone_number"]
+
+        it "cannot contain numbers or spaces" $ do
+            assertNoParse "{{ words and numb3rs }}"
+
+    describe "Logic tags" $ do
+        context "for loops" $ do
+            it "parses to a for loop with the correct inner template" $ do
+                "{% for elem in list %}foo {{elem.member}}{% endfor %}"
+                    `shouldParseTo` [ TFor "elem" "list"
+                                        [ TString "foo "
+                                        , TVar "elem.member"
+                                        ]
                                     ]
-                                ]
 
-        it "parses if statements with equality" $ do
-            "oh {% if user.name == 'elvis presley' %}\nhey {{king}}.\n{% endif %}"
-                `shouldParseTo` [ TString "oh "
-                                , TIf (TEquals "user.name" "elvis presley")
-                                    [ TString "\nhey "
-                                    , TVar "king"
-                                    , TString ".\n"
-                                    ] Nothing
-                                ]
+        context "if statements" $ do
+            it "considers a single argument a truthy value test" $ do
+                "{% if foo.bar %}foo {{foo.baz}}{% endif %}"
+                    `shouldParseTo` [ TIf (TTruthy "foo.bar")
+                                        [ TString "foo "
+                                        , TVar "foo.baz"
+                                        ] Nothing
+                                    ]
 
-        it "parses if statements with truthy tests" $ do
-            "oh {% if user.name %}\nhey {{king}}.\n{% endif %}"
-                `shouldParseTo` [ TString "oh "
-                                , TIf (TTruthy "user.name")
-                                    [ TString "\nhey "
-                                    , TVar "king"
-                                    , TString ".\n"
-                                    ] Nothing
-                                ]
+            context "Operators" $ do
+                it "parses equality between two objects" $ do
+                    "{% if foo.bar == baz.bat %}content{% endif %}"
+                        `shouldParseTo` [ TIf (TEquals "foo.bar" "baz.bat")
+                                            [ TString "content" ] Nothing
+                                        ]
+
+                it "parses equality between an object and a string" $ do
+                    "{% if foo.bar == 'baz, bat' %}content{% endif %}"
+                        `shouldParseTo` [ TIf (TEquals "foo.bar" "baz, bat")
+                                            [ TString "content" ] Nothing
+                                        ]
 
     where
         str `shouldParseTo` ast = parseTemplate str `shouldBe` Right ast
+
+        assertNoParse str =
+            case parseTemplate str of
+                    Left _ -> True
+                    _      -> False
