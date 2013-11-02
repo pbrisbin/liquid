@@ -68,9 +68,3 @@ myHandler userId = do
            $ either (const "uh-oh") id
            $ liquid user $(textFile "templates/user.html")
 ```
-
-## Specs
-
-```sh
-$ ./spec/run
-```
