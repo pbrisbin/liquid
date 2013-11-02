@@ -64,10 +64,6 @@ isValueTruthy (Number n) = n /= 0
 isValueTruthy (Bool b)   = b
 isValueTruthy Null       = False
 
+-- | There may be edge-cases here, but I *think* this works
 isValueEqual :: Value -> Text -> Bool
-isValueEqual (String t)   rhs     = t == rhs
-isValueEqual (Number n)   rhs     = (T.pack $ show n) == rhs
-isValueEqual (Bool True)  "true"  = True
-isValueEqual (Bool False) "false" = True
-isValueEqual Null         "null"  = True
-isValueEqual _            _       = False
+isValueEqual v rhs = renderValue v == rhs
