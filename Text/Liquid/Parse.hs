@@ -74,8 +74,8 @@ ifStatement = do
     return $ TIf pred cons Nothing
 
 predicate :: Parser TPredicate
-predicate =  try binaryPredicate
-         <|> truthyPredicate
+predicate =   try binaryPredicate
+          <|> truthyPredicate
 
 binaryPredicate :: Parser TPredicate
 binaryPredicate = do
