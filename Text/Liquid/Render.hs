@@ -51,9 +51,10 @@ isTrue ctx (TTruthy key) =
         Nothing -> False
 
 isTrue ctx (TEquals lhs rhs) =
-    case lookupValue lhs ctx of
-        Just v  -> isValueEqual v rhs
-        Nothing -> False
+    case (lookupValue lhs ctx, lookupValue rhs ctx) of
+        (Just v1, Just v2) -> v1 == v2
+        (Just v,  _      ) -> isValueEqual v rhs
+        _                  -> False
 
 isValueTruthy :: Value -> Bool
 isValueTruthy (Object _) = True

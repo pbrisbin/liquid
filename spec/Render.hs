@@ -104,3 +104,9 @@ main = hspec $ do
                 it "does not render when an equality predicate is false" $ do
                     (object ["var" .= apple], [TIf (TEquals "var" "orange") [TString "content"] Nothing])
                         `shouldRender` ""
+
+                it "supports equality checks between two objects" $ do
+                    let ctx = object ["var" .= object ["one" .= apple, "two" .= apple]]
+
+                    (ctx, [TIf (TEquals "var.one" "var.two") [TString "content"] Nothing])
+                        `shouldRender` "content"
