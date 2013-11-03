@@ -54,17 +54,17 @@ liquid (User "Pat" 28 [Post "Post one", Post "Post two"]) $
 
 This may seem verbose as a standalone example, but in a framework-using 
 web application (like Yesod), you'll likely already have models with 
-`ToJSON` instances and support for loading `Text` templates from the 
-filesystem.
+`ToJSON` instances.
 
 A more realistic use case may simply be:
 
 ```haskell
 myHandler :: UserId -> Handler Html
 myHandler userId = do
-    user <- get404 userId
+    user     <- get404 userId
+    template <- T.readFile "templates/user.html"
 
     return . preEscapedToMarkup
-           $ either (const "uh-oh") id
-           $ liquid user $(textFile "templates/user.html")
+           $ either errorHandler id
+           $ liquid user template
 ```
