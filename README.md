@@ -68,3 +68,25 @@ myHandler userId = do
            $ either errorHandler id
            $ liquid user template
 ```
+
+## Testing
+
+Running all specs:
+
+```
+$ ghc -isrc -itest -e main test/Spec.hs
+```
+
+Running one spec:
+
+```
+$ ghc -isrc -itest -e main test/Text/Liquid/RenderSpec.hs
+```
+
+Continuously run specs as files are edited:
+
+```
+$ gem install bundler
+$ bundle
+$ bundle exec guard
+```
