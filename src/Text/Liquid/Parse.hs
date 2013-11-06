@@ -51,29 +51,29 @@ interpolation = fmap (TVar . T.pack)
 forLoop :: Parser TPart
 forLoop = do
     openTag "for"
-    elem <- variable
-    many1 space
-    string "in"
-    many1 space
+    e <- variable
+    _ <- many1 space
+    _ <- string "in"
+    _ <- many1 space
     list <- variable
     spaces
-    string "%}"
+    _ <- string "%}"
 
     inner <- manyTill tpart (try $ endTag "for")
 
-    return $ TFor (T.pack elem) (T.pack list) inner
+    return $ TFor (T.pack e) (T.pack list) inner
 
 ifStatement :: Parser TPart
 ifStatement = do
     openTag "if"
-    pred <- predicate
+    p <- predicate
     spaces
-    string "%}"
+    _ <- string "%}"
 
     cons <- manyTill tpart (try $ endTag "if")
 
     -- TODO: Alternate
-    return $ TIf pred cons Nothing
+    return $ TIf p cons Nothing
 
 predicate :: Parser TPredicate
 predicate =   try binaryPredicate
@@ -127,17 +127,17 @@ variable = many $   letter
 
 openTag :: String -> Parser ()
 openTag tg = do
-    string "{%"
+    _ <- string "{%"
     spaces
-    string tg
-    many1 space
+    _ <- string tg
+    _ <- many1 space
 
     return ()
 
 endTag :: String -> Parser ()
 endTag tg = do
-    between (string "{%") (string "%}")
-            (stripped $ string $ "end" ++ tg)
+    _ <- between (string "{%") (string "%}")
+                 (stripped $ string $ "end" ++ tg)
 
     return ()
 

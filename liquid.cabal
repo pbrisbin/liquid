@@ -34,5 +34,6 @@ test-suite spec
   main-is: Spec.hs
 
   build-depends: base  == 4.*
+               , text
                , liquid
                , hspec >= 1.3

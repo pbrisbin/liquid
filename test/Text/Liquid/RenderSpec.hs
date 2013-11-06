@@ -2,13 +2,12 @@
 module Text.Liquid.RenderSpec (main, spec) where
 
 import Test.Hspec
-
 import Text.Liquid.Context
 import Text.Liquid.Parse
 import Text.Liquid.Render
 
 -- FIXTURES {{{
-data Post = Post { postTitle :: Text }
+data Post = Post Text
 
 instance ToJSON Post where
     toJSON (Post title) = object ["title" .= title]
@@ -29,10 +28,10 @@ user :: User
 user = User "Pat" 28 posts
 
 instance ToJSON User where
-    toJSON (User name age posts) =
+    toJSON (User name age posts') =
         object ["user" .= object [ "name"  .= name
                                  , "age"   .= age
-                                 , "posts" .= map toJSON posts
+                                 , "posts" .= map toJSON posts'
                                  ]]
 -- }}}
 
