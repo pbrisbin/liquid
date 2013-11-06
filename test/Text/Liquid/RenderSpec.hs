@@ -1,51 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Text.Liquid.RenderSpec (main, spec) where
 
-import Test.Hspec
-import Text.Liquid.Context
-import Text.Liquid.Parse
-import Text.Liquid.Render
-
--- FIXTURES {{{
-data Post = Post Text
-
-instance ToJSON Post where
-    toJSON (Post title) = object ["title" .= title]
-
-posts :: [Post]
-posts = [ Post "Post one"
-        , Post "Post two"
-        , Post "Post three"
-        ]
-
-data User = User
-    { userName  :: Text
-    , userAge   :: Int
-    , userPosts :: [Post]
-    }
-
-user :: User
-user = User "Pat" 28 posts
-
-instance ToJSON User where
-    toJSON (User name age posts') =
-        object ["user" .= object [ "name"  .= name
-                                 , "age"   .= age
-                                 , "posts" .= map toJSON posts'
-                                 ]]
--- }}}
-
--- HELPERS {{{
-shouldRender :: (Value, Template) -> Text -> Expectation
-(ctx, ast) `shouldRender` txt = renderWith ctx ast `shouldBe` Right txt
-
-assertNoRender :: Value -> Template -> Bool
-assertNoRender ctx ast =
-    case renderWith ctx ast of
-        Left _  -> True
-        _       -> False
-
--- }}}
+import SpecHelper
 
 main :: IO ()
 main = hspec spec

@@ -1,21 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Text.Liquid.ParseSpec (main, spec) where
 
-import Test.Hspec
-import Text.Liquid.Parse
-import Data.Text (Text)
-
--- HELPERS {{{
-shouldParseTo :: Text -> Template -> Expectation
-str `shouldParseTo` ast = parseTemplate str `shouldBe` Right ast
-
-assertNoParse :: Text -> Bool
-assertNoParse str =
-    case parseTemplate str of
-            Left _ -> True
-            _      -> False
-
--- }}}
+import SpecHelper
 
 main :: IO ()
 main = hspec spec
