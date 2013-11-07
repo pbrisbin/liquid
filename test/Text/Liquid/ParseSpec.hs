@@ -47,6 +47,13 @@ spec = do
                                             ] Nothing
                                         ]
 
+                it "parses an if statment with an else branch" $ do
+                    "{% if foo %}consequent{% else %}alternative{% endif %}"
+                        `shouldParseTo` [ TIf (TTruthy "foo")
+                                            [ TString "consequent" ]
+                                            (Just [ TString "alternative" ])
+                                        ]
+
                 context "Operators" $ do
                     it "parses equality between two objects" $ do
                         "{% if foo.bar == baz.bat %}content{% endif %}"
