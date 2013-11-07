@@ -30,54 +30,74 @@ data TPredicate = TTruthy Text
                 | TLess Text Text deriving (Show, Eq)
 
 parseTemplate :: Text -> Either String Template
-parseTemplate = left show . parse template ""
-
-template :: Parser Template
-template = manyTill tpart eof
+parseTemplate = left show . parse (manyTill tpart $ try eof) ""
 
 tpart :: Parser TPart
-tpart = special <|> text
+tpart = try outputTag <|> logicTag <|> textPart
 
-special :: Parser TPart
-special =   try interpolation
-        <|> try forLoop
-        <|> ifStatement
+-- TODO: filters
+outputTag :: Parser TPart
+outputTag = fmap TVar $ within "{{" "}}" variable
 
-interpolation :: Parser TPart
-interpolation = fmap (TVar . T.pack)
-              $ between (string "{{") (string "}}")
-                        (stripped variable)
+logicTag :: Parser TPart
+logicTag = try forLoop <|> ifStatement
+
+textPart :: Parser TPart
+textPart = fmap TString $ textUntil eot
+
+    where
+        eot = lookAhead
+            $   try (string "{{" >> return ())
+            <|> try (string "{%" >> return ())
+            <|> eof
 
 forLoop :: Parser TPart
 forLoop = do
-    openTag "for"
-    e <- variable
-    _ <- many1 space
-    _ <- string "in"
-    _ <- many1 space
-    list <- variable
-    spaces
-    _ <- string "%}"
+    (e, list) <- tagWith "for" eachIn
+    inner     <- manyTill tpart $ try endFor
 
-    inner <- manyTill tpart (try $ endTag "for")
+    return $ TFor e list inner
 
-    return $ TFor (T.pack e) (T.pack list) inner
+    where
+        eachIn = do
+            e <- variable
+            _ <- many1 space
+            _ <- string "in"
+            _ <- many1 space
+            es <- variable
+
+            return (e, es)
+
+        endFor = endTag "for"
 
 ifStatement :: Parser TPart
 ifStatement = do
-    openTag "if"
-    p <- predicate
-    spaces
-    _ <- string "%}"
+    p <- tagWith "if" $   try binaryPredicate
+                      <|> truthyPredicate
 
-    cons <- manyTill tpart (try $ endTag "if")
+    (cons, alt) <-   try withAlternative
+                 <|> consequentOnly
 
-    -- TODO: Alternate
-    return $ TIf p cons Nothing
+    return $ TIf p cons alt
 
-predicate :: Parser TPredicate
-predicate =   try binaryPredicate
-          <|> truthyPredicate
+    where
+        consequentOnly = do
+            c <- manyTill tpart $ try endIf
+
+            return (c, Nothing)
+
+        withAlternative = do
+            c <- manyTill tpart $ try elseTag
+            a <- manyTill tpart $ try endIf
+
+            return (c, Just a)
+
+        elseTag = do
+            _ <- tag (string $ "else")
+
+            return ()
+
+        endIf = endTag "if"
 
 binaryPredicate :: Parser TPredicate
 binaryPredicate = do
@@ -87,59 +107,54 @@ binaryPredicate = do
           <|> try bareNumber
           <|> variable
 
-    return $ mkOp (T.pack lhs) (T.pack rhs)
+    return $ mkOp lhs rhs
 
     where
+        -- TODO: escaped quotes
         quotedString = do
             c   <- oneOf "\'\""
             str <- manyTill anyChar $ char c
 
-            return str
+            return $ T.pack str
 
-        bareNumber = many1 digit
+        bareNumber = fmap T.pack $ many1 digit
 
-        operator = do
-            spaces
-            op <-   try (string "==" >> return TEquals)
-                <|> try (string "!=" >> return TNotEquals)
-                <|> try (string ">=" >> return TGreaterEquals)
-                <|> try (string "<=" >> return TLessEquals)
-                <|> try (string ">"  >> return TGreater)
-                <|>     (string "<"  >> return TLess)
-            spaces
-
-            return op
+        operator = stripped
+                 $   try (string "==" >> return TEquals)
+                 <|> try (string "!=" >> return TNotEquals)
+                 <|> try (string ">=" >> return TGreaterEquals)
+                 <|> try (string "<=" >> return TLessEquals)
+                 <|> try (string ">"  >> return TGreater)
+                 <|>     (string "<"  >> return TLess)
 
 truthyPredicate :: Parser TPredicate
-truthyPredicate = fmap (TTruthy . T.pack) variable
+truthyPredicate = fmap TTruthy $ variable
 
-text :: Parser TPart
-text = fmap (TString . T.pack) $ manyTill anyToken eot
-
-    where
-        eot = lookAhead $   try (string "{{" >> return ())
-                        <|> try (string "{%" >> return ())
-                        <|> eof
-
-variable :: Parser String
-variable = many $   letter
-                <|> oneOf "_."
-
-openTag :: String -> Parser ()
-openTag tg = do
-    _ <- string "{%"
-    spaces
-    _ <- string tg
-    _ <- many1 space
-
-    return ()
+variable :: Parser Text
+variable = fmap T.pack $ many $ letter <|> oneOf "_."
 
 endTag :: String -> Parser ()
-endTag tg = do
-    _ <- between (string "{%") (string "%}")
-                 (stripped $ string $ "end" ++ tg)
+endTag tg = tag (string $ "end" ++ tg) >> return ()
 
-    return ()
+tagWith :: Stream s m Char => String -> ParsecT s u m a -> ParsecT s u m a
+tagWith tg p = tag $ string tg >> many1 space >> p
+
+tag :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
+tag p = between (string "{%") (string "%}") (stripped p)
 
 stripped :: Stream s m Char => ParsecT s u m b -> ParsecT s u m b
 stripped = between spaces spaces
+
+within a b = between (string a >> spaces) (spaces >> string b)
+
+textWithin :: Stream s m Char
+           => String
+           -> String
+           -> ParsecT s u m String
+           -> ParsecT s u m Text
+textWithin a b p = fmap T.pack
+                 $ between (string a >> spaces  )
+                           (spaces   >> string b) p
+
+textUntil :: Stream s m Char => ParsecT s u m end -> ParsecT s u m Text
+textUntil p = fmap T.pack $ manyTill anyToken p
