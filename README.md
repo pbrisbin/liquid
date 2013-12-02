@@ -4,7 +4,10 @@ Haskell implementation of Liquid templating by Shopify.
 
 # Installation
 
-*TODO: cabalize this thing*
+```
+$ git clone https://github.com/pbrisbin/liquid
+$ cd liquid && cabal install
+```
 
 # Usage
 
