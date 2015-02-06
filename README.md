@@ -9,6 +9,11 @@ $ git clone https://github.com/pbrisbin/liquid
 $ cd liquid && cabal install
 ```
 
+```
+% cabal sandbox init
+% cabal install --dependencies-only -- enable-tests
+```
+
 # Usage
 
 Generally speaking, the function `liquid` takes an object with a valid 
@@ -77,13 +82,13 @@ myHandler userId = do
 Running all specs:
 
 ```
-$ ghc -isrc -itest -e main test/Spec.hs
+$ cabal test
 ```
 
 Running one spec:
 
 ```
-$ ghc -isrc -itest -e main test/Text/Liquid/RenderSpec.hs
+$ cabal exec -- ghc -isrc -itest -e main test/Text/Liquid/RenderSpec.hs
 ```
 
 Continuously run specs as files are edited:
