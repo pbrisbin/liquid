@@ -23,6 +23,7 @@ library
                , vector
                , aeson
                , parsec
+               , scientific
 
 test-suite spec
   type: exitcode-stdio-1.0

@@ -4,6 +4,8 @@ module Text.Liquid.Render (renderWith) where
 import Text.Liquid.Context
 import Text.Liquid.Parse
 
+import Data.Scientific (floatingOrInteger)
+
 import qualified Data.Text as T
 import qualified Data.Vector as V
 
@@ -41,7 +43,12 @@ renderVector outer key list template =
 
 renderValue :: Value -> Text
 renderValue (String t)   = t
-renderValue (Number n)   = T.pack $ show n
+renderValue (Number n)   = T.pack $ showNumeric $ floatingOrInteger n
+
+  where
+    showNumeric :: Either Double Int -> String
+    showNumeric = either show show
+
 renderValue (Bool True)  = "true"
 renderValue (Bool False) = "false"
 renderValue Null         = ""
