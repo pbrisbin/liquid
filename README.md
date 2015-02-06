@@ -5,13 +5,9 @@ Haskell implementation of Liquid templating by Shopify.
 # Installation
 
 ```
-$ git clone https://github.com/pbrisbin/liquid
-$ cd liquid && cabal install
-```
-
-```
-% cabal sandbox init
-% cabal install --dependencies-only -- enable-tests
+$ git clone https://github.com/pbrisbin/liquid && cd liquid
+$ cabal sandbox init
+$ cabal install --dependencies-only -- enable-tests
 ```
 
 # Usage
