@@ -18,13 +18,13 @@ renderPartWith ctx (TVar txt) =
         Just v  -> Right (renderValue v)
         Nothing -> Left $ "Value not found in context: " ++ T.unpack txt
 
-renderPartWith ctx (TFor elem list template) =
+renderPartWith ctx (TFor elm list template) =
     case lookupValue list ctx of
-        Just (Array vector) -> renderVector ctx elem vector template
-        _ -> Left $ "Array not found in context: " ++ T.unpack elem
+        Just (Array vector) -> renderVector ctx elm vector template
+        _ -> Left $ "Array not found in context: " ++ T.unpack elm
 
-renderPartWith ctx (TIf pred cons malt) =
-    case (isTrue ctx pred, malt) of
+renderPartWith ctx (TIf prd cons malt) =
+    case (isTrue ctx prd, malt) of
         (True,  _       ) -> renderWith ctx cons
         (False, Just alt) -> renderWith ctx alt
         _                 -> return ""
@@ -58,6 +58,8 @@ isTrue ctx (TEquals lhs rhs) =
         (Just v1, Just v2) -> v1 == v2
         (Just v,  _      ) -> isValueEqual v rhs
         _                  -> False
+
+isTrue _ _ = error "NotImplementedError"
 
 isValueTruthy :: Value -> Bool
 isValueTruthy (Object _) = True

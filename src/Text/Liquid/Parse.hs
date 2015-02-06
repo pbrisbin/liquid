@@ -145,16 +145,12 @@ tag p = between (string "{%") (string "%}") (stripped p)
 stripped :: Stream s m Char => ParsecT s u m b -> ParsecT s u m b
 stripped = between spaces spaces
 
+within :: Stream s m Char
+       => String
+       -> String
+       -> ParsecT s u m a
+       -> ParsecT s u m a
 within a b = between (string a >> spaces) (spaces >> string b)
-
-textWithin :: Stream s m Char
-           => String
-           -> String
-           -> ParsecT s u m String
-           -> ParsecT s u m Text
-textWithin a b p = fmap T.pack
-                 $ between (string a >> spaces  )
-                           (spaces   >> string b) p
 
 textUntil :: Stream s m Char => ParsecT s u m end -> ParsecT s u m Text
 textUntil p = fmap T.pack $ manyTill anyToken p
