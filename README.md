@@ -2,6 +2,8 @@
 
 Haskell implementation of Liquid templating by Shopify.
 
+**NOTE**: This project is dead. Please try https://github.com/projectorhq/haskell-liquid
+
 # Installation
 
 ```
